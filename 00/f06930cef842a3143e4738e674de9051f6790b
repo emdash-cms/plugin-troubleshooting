@@ -1,0 +1,25 @@
+dist/index.mjs
+  s_238d28c5233f77::t_ef3344d0b0f17b 10
+dist/manifest.json
+  s_238d28c5233f77::t_e35912ce94f30d 3
+dist/plugin.mjs
+  s_238d28c5233f77::t_39a70737bf0eb6 1
+package.json
+  s_238d28c5233f77::t_c8bb1cce53bb63 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "00f06930cef842a3143e4738e674de9051f6790b",
+  "prompts": {},
+  "sessions": {
+    "s_238d28c5233f77": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_050fbec5affeJ5ZbIEUX4HGzSd",
+        "model": "grok-4.5"
+      },
+      "human_author": "scottbuscemi <sbuscemi@cloudflare.com>"
+    }
+  }
+}
