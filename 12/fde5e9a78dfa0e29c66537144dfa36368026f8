@@ -1,0 +1,19 @@
+tsconfig.json
+  s_238d28c5233f77::t_4e072d0c26308f 1-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "12fde5e9a78dfa0e29c66537144dfa36368026f8",
+  "prompts": {},
+  "sessions": {
+    "s_238d28c5233f77": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_050fbec5affeJ5ZbIEUX4HGzSd",
+        "model": "grok-4.5"
+      },
+      "human_author": "scottbuscemi <sbuscemi@cloudflare.com>"
+    }
+  }
+}
