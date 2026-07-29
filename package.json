@@ -32,7 +32,7 @@
 		"dev": "emdash-plugin dev",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",
-		"prepublishOnly": "pnpm build"
+		"prepublishOnly": "node -e \"require('node:fs').accessSync('dist/index.mjs')\""
 	},
 	"peerDependencies": {
 		"emdash": ">=0.32.0"
