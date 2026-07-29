@@ -1,6 +1,6 @@
 {
 	"name": "@emdash-cms/plugin-troubleshooting",
-	"version": "0.1.2",
+	"version": "0.2.0",
 	"description": "Troubleshooting plugin for EmDash CMS \u2014 resolve caching and other runtime shenanigans",
 	"type": "module",
 	"main": "dist/index.mjs",

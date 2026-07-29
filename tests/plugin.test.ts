@@ -1,143 +1,152 @@
 import { describe, expect, it, vi } from "vitest";
 
-import plugin from "../src/plugin.js";
+import plugin, { normalizePathPrefix } from "../src/plugin.js";
+
+describe("normalizePathPrefix", () => {
+	it("normalizes paths and URLs", () => {
+		expect(normalizePathPrefix("/posts/a")).toEqual({ ok: true, path: "/posts/a" });
+		expect(normalizePathPrefix("posts/a")).toEqual({ ok: true, path: "/posts/a" });
+		expect(normalizePathPrefix("https://ex.com/posts/a?x=1")).toEqual({
+			ok: true,
+			path: "/posts/a",
+		});
+	});
+
+	it("rejects empty", () => {
+		expect(normalizePathPrefix("")).toMatchObject({ ok: false });
+	});
+});
 
 describe("admin route", () => {
-	it("disables clear buttons when caches are not configured", async () => {
-		const getObjectCacheStatus = vi.fn().mockResolvedValue({ configured: false });
-		const getWorkersCacheStatus = vi.fn().mockResolvedValue({ configured: false });
+	it("renders form sections when caches are configured", async () => {
 		const result = (await callAdmin(
 			{ type: "page_load", page: "/" },
 			{
 				cache: {
-					getObjectCacheStatus,
-					getWorkersCacheStatus,
+					getObjectCacheStatus: vi.fn().mockResolvedValue({ configured: true }),
+					getWorkersCacheStatus: vi.fn().mockResolvedValue({ configured: true }),
 					purgeObjectCache: vi.fn(),
 					purgeWorkersCache: vi.fn(),
 				},
 			},
 		)) as {
-			blocks: Array<{
-				type: string;
-				text?: string;
-				elements?: Array<Record<string, unknown>>;
-			}>;
+			blocks: Array<{ type: string; block_id?: string; submit?: { action_id: string } }>;
 		};
 
-		expect(getObjectCacheStatus).toHaveBeenCalledOnce();
-		expect(getWorkersCacheStatus).toHaveBeenCalledOnce();
-		const actionBlocks = result.blocks.filter((b) => b.type === "actions");
-		expect(actionBlocks).toHaveLength(2);
-		expect(actionBlocks[0]?.elements?.[0]).toMatchObject({
-			type: "button",
-			label: "Clear object cache",
-			action_id: "purge_object_cache",
-			style: "secondary",
-			disabled: true,
-			title: "Object Cache Not Configured",
-		});
-		expect(actionBlocks[1]?.elements?.[0]).toMatchObject({
-			type: "button",
-			label: "Clear Workers Cache",
-			action_id: "purge_workers_cache",
-			style: "secondary",
-			disabled: true,
-			title: "Workers Cache Not Available",
-		});
+		const forms = result.blocks.filter((b) => b.type === "form");
+		expect(forms.map((f) => f.block_id)).toEqual([
+			"object-cache",
+			"workers-cache-all",
+			"workers-cache-path",
+		]);
+		expect(forms[2]?.submit?.action_id).toBe("purge_workers_cache_path");
 	});
 
-	it("enables clear buttons when caches are configured", async () => {
-		const getObjectCacheStatus = vi.fn().mockResolvedValue({ configured: true });
-		const getWorkersCacheStatus = vi.fn().mockResolvedValue({ configured: true });
-		const result = (await callAdmin(
-			{ type: "page_load", page: "/" },
-			{
-				cache: {
-					getObjectCacheStatus,
-					getWorkersCacheStatus,
-					purgeObjectCache: vi.fn(),
-					purgeWorkersCache: vi.fn(),
-				},
-			},
-		)) as {
-			blocks: Array<{
-				type: string;
-				elements?: Array<Record<string, unknown>>;
-			}>;
+	it("shows banners when caches are not configured", async () => {
+		const result = (await callAdmin({ type: "page_load", page: "/" })) as {
+			blocks: Array<{ type: string; title?: string }>;
 		};
-
-		const actionBlocks = result.blocks.filter((b) => b.type === "actions");
-		expect(actionBlocks[0]?.elements?.[0]).toMatchObject({
-			type: "button",
-			label: "Clear object cache",
-			action_id: "purge_object_cache",
-			style: "primary",
-		});
-		expect(actionBlocks[0]?.elements?.[0]).not.toHaveProperty("disabled");
-		expect(actionBlocks[1]?.elements?.[0]).toMatchObject({
-			type: "button",
-			label: "Clear Workers Cache",
-			action_id: "purge_workers_cache",
-			style: "primary",
-		});
-		expect(actionBlocks[1]?.elements?.[0]).not.toHaveProperty("disabled");
+		const banners = result.blocks.filter((b) => b.type === "banner");
+		expect(banners.some((b) => b.title === "Object Cache Not Configured")).toBe(true);
+		expect(banners.some((b) => b.title === "Workers Cache Not Available")).toBe(true);
 	});
 
-	it("purges object cache on button action when configured", async () => {
+	it("purges object cache on form submit", async () => {
 		const purgeObjectCache = vi.fn().mockResolvedValue({
 			configured: true,
 			active: true,
-			purged: ["settings", "menus", "content:posts"],
+			purged: ["settings", "menus"],
 		});
-		const getObjectCacheStatus = vi.fn().mockResolvedValue({ configured: true });
-		const getWorkersCacheStatus = vi.fn().mockResolvedValue({ configured: false });
 		const result = (await callAdmin(
-			{ type: "block_action", action_id: "purge_object_cache" },
+			{ type: "form_submit", action_id: "purge_object_cache", values: {} },
 			{
 				cache: {
+					getObjectCacheStatus: vi.fn().mockResolvedValue({ configured: true }),
+					getWorkersCacheStatus: vi.fn().mockResolvedValue({ configured: false }),
 					purgeObjectCache,
-					getObjectCacheStatus,
-					getWorkersCacheStatus,
 					purgeWorkersCache: vi.fn(),
 				},
 			},
-		)) as {
-			toast?: { type: string; message: string };
-		};
+		)) as { toast?: { message: string; type: string } };
 
 		expect(purgeObjectCache).toHaveBeenCalledOnce();
 		expect(result.toast).toEqual({
-			message: "Object cache cleared (3 namespaces)",
+			message: "Object cache cleared (2 namespaces)",
 			type: "success",
 		});
 	});
 
-	it("purges Workers Cache on button action when configured", async () => {
-		const purgeWorkersCache = vi.fn().mockResolvedValue({
-			configured: true,
-			purged: true,
-		});
-		const getObjectCacheStatus = vi.fn().mockResolvedValue({ configured: false });
-		const getWorkersCacheStatus = vi.fn().mockResolvedValue({ configured: true });
+	it("purges all Workers Cache on form submit", async () => {
+		const purgeWorkersCache = vi.fn().mockResolvedValue({ configured: true, purged: true });
 		const result = (await callAdmin(
-			{ type: "block_action", action_id: "purge_workers_cache" },
+			{ type: "form_submit", action_id: "purge_workers_cache", values: {} },
 			{
 				cache: {
-					purgeWorkersCache,
-					getObjectCacheStatus,
-					getWorkersCacheStatus,
+					getObjectCacheStatus: vi.fn().mockResolvedValue({ configured: false }),
+					getWorkersCacheStatus: vi.fn().mockResolvedValue({ configured: true }),
 					purgeObjectCache: vi.fn(),
+					purgeWorkersCache,
 				},
 			},
-		)) as {
-			toast?: { type: string; message: string };
-		};
+		)) as { toast?: { message: string; type: string } };
 
-		expect(purgeWorkersCache).toHaveBeenCalledOnce();
+		expect(purgeWorkersCache).toHaveBeenCalledWith();
 		expect(result.toast).toEqual({
 			message: "Workers Cache cleared",
 			type: "success",
 		});
+	});
+
+	it("purges a path prefix from form values", async () => {
+		const purgeWorkersCache = vi.fn().mockResolvedValue({
+			configured: true,
+			purged: true,
+			pathPrefixes: ["/posts/hello"],
+		});
+		const result = (await callAdmin(
+			{
+				type: "form_submit",
+				action_id: "purge_workers_cache_path",
+				values: { path: "https://example.com/posts/hello?x=1" },
+			},
+			{
+				cache: {
+					getObjectCacheStatus: vi.fn().mockResolvedValue({ configured: false }),
+					getWorkersCacheStatus: vi.fn().mockResolvedValue({ configured: true }),
+					purgeObjectCache: vi.fn(),
+					purgeWorkersCache,
+				},
+			},
+		)) as { toast?: { message: string; type: string } };
+
+		expect(purgeWorkersCache).toHaveBeenCalledWith({ pathPrefixes: ["/posts/hello"] });
+		expect(result.toast).toEqual({
+			message: "Workers Cache cleared for /posts/hello",
+			type: "success",
+		});
+	});
+
+	it("toasts on empty path", async () => {
+		const purgeWorkersCache = vi.fn();
+		const result = (await callAdmin(
+			{
+				type: "form_submit",
+				action_id: "purge_workers_cache_path",
+				values: { path: "  " },
+			},
+			{
+				cache: {
+					getObjectCacheStatus: vi.fn().mockResolvedValue({ configured: false }),
+					getWorkersCacheStatus: vi.fn().mockResolvedValue({ configured: true }),
+					purgeObjectCache: vi.fn(),
+					purgeWorkersCache,
+				},
+			},
+		)) as { toast?: { message: string; type: string } };
+
+		expect(purgeWorkersCache).not.toHaveBeenCalled();
+		expect(result.toast?.type).toBe("error");
+		expect(result.toast?.message).toBe("Path is required");
 	});
 
 	it("returns empty blocks for unknown pages", async () => {
@@ -156,7 +165,12 @@ describe("admin route", () => {
 });
 
 async function callAdmin(
-	input: { type: string; page?: string; action_id?: string },
+	input: {
+		type: string;
+		page?: string;
+		action_id?: string;
+		values?: Record<string, unknown>;
+	},
 	ctxOverrides: Record<string, unknown> = {},
 ) {
 	const handler = plugin.routes?.admin;
@@ -168,7 +182,7 @@ async function callAdmin(
 
 function makeTestContext(overrides: Record<string, unknown> = {}) {
 	return {
-		plugin: { id: "troubleshooting", version: "0.1.0" },
+		plugin: { id: "troubleshooting", version: "0.1.2" },
 		log: {
 			info: () => {},
 			warn: () => {},

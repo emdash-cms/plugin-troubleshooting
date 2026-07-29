@@ -14,10 +14,14 @@ calls `ctx.cache.purgeObjectCache()`.
 ### Workers Cache clear
 
 Same capability. Calls `ctx.cache.purgeWorkersCache()`, which uses native
-Workers Caching (`cache.purge({ purgeEverything: true })` from
-`cloudflare:workers`). Enable with wrangler `"cache": { "enabled": true }` and
-Astro `cacheCloudflare()` — **no zone ID or API token**. Button is disabled when
-native purge is unavailable (e.g. Node / cache not enabled).
+Workers Caching (`cache.purge` from `cloudflare:workers`):
+
+- **Clear all** → `purgeEverything: true`
+- **Clear path** → `pathPrefixes` (path or full URL; prefix match)
+
+Enable with wrangler `"cache": { "enabled": true }` and Astro `cacheCloudflare()`
+— **no zone ID or API token**. Actions are hidden when native purge is
+unavailable (e.g. local workerd without `cache.purge`).
 
 > **Note on Settings hub:** EmDash does not currently let plugins inject tabs into the core Settings screen (`/_emdash/admin/settings`). Plugin admin pages appear in the sidebar under the plugin name (and in the command palette). This plugin registers a page labeled **Troubleshooting** there.
 

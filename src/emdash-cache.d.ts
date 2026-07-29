@@ -30,7 +30,9 @@ declare module "emdash/plugin" {
 		getObjectCacheStatus(): Promise<ObjectCacheStatus>;
 		purgeObjectCache(namespaces?: string[]): Promise<ObjectCachePurgeResult>;
 		getWorkersCacheStatus(): Promise<WorkersCacheStatus>;
-		purgeWorkersCache(): Promise<WorkersCachePurgeResult>;
+		purgeWorkersCache(options?: {
+			pathPrefixes?: string[];
+		}): Promise<WorkersCachePurgeResult & { pathPrefixes?: string[] }>;
 	}
 
 	interface PluginContext {
