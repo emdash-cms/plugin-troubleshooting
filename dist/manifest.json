@@ -1,0 +1,28 @@
+{
+  "id": "troubleshooting",
+  "version": "0.1.0",
+  "declaredAccess": {
+    "cache": {
+      "purge": {}
+    }
+  },
+  "capabilities": [
+    "cache:purge"
+  ],
+  "allowedHosts": [],
+  "storage": {},
+  "hooks": [],
+  "routes": [
+    "admin"
+  ],
+  "admin": {
+    "pages": [
+      {
+        "path": "/troubleshooting",
+        "label": "Troubleshooting",
+        "icon": "settings"
+      }
+    ],
+    "widgets": []
+  }
+}

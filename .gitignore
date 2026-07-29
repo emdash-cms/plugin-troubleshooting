@@ -1,0 +1,6 @@
+node_modules/
+*.tsbuildinfo
+.DS_Store
+# dist/ is committed so `pnpm add github:emdash-cms/plugin-troubleshooting`
+# works before consumers rebuild. Rebuild with a plugin-cli that knows
+# cache:purge (emdash ≥ 0.32) before cutting a release.

@@ -1,0 +1,53 @@
+{
+	"name": "@emdash-cms/plugin-troubleshooting",
+	"version": "0.1.0",
+	"description": "Troubleshooting plugin for EmDash CMS — resolve caching and other runtime shenanigans",
+	"type": "module",
+	"main": "dist/index.mjs",
+	"exports": {
+		".": {
+			"import": "./dist/index.mjs",
+			"types": "./dist/index.d.mts"
+		},
+		"./sandbox": "./dist/plugin.mjs"
+	},
+	"files": [
+		"dist",
+		"emdash-plugin.jsonc",
+		"README.md",
+		"LICENSE"
+	],
+	"keywords": [
+		"emdash",
+		"cms",
+		"plugin",
+		"troubleshooting",
+		"cache",
+		"cloudflare"
+	],
+	"author": "Scott Buscemi",
+	"license": "MIT",
+	"scripts": {
+		"build": "emdash-plugin build",
+		"dev": "emdash-plugin dev",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"prepublishOnly": "pnpm build"
+	},
+	"peerDependencies": {
+		"emdash": ">=0.32.0"
+	},
+	"devDependencies": {
+		"@emdash-cms/plugin-cli": "^0.8.0",
+		"emdash": "^0.31.1",
+		"typescript": "^5.9.0",
+		"vitest": "^4.1.0"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/emdash-cms/plugin-troubleshooting.git"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}

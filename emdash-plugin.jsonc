@@ -1,0 +1,30 @@
+{
+	"$schema": "./node_modules/@emdash-cms/plugin-cli/schemas/emdash-plugin.schema.json",
+
+	"slug": "troubleshooting",
+	// plugins.emdashcms.com (same publisher as first-party monorepo plugins)
+	"publisher": "did:plc:xyraubanwc5fwemkduw3upi6",
+
+	"license": "MIT",
+	"author": { "name": "Scott Buscemi" },
+	"security": { "url": "https://github.com/emdash-cms/plugin-troubleshooting/security/advisories/new" },
+	"description": "Resolve EmDash shenanigans — caching and other runtime issues.",
+
+	// cache:purge unlocks ctx.cache.purgeObjectCache() (CMS object cache).
+	// Additional troubleshooting actions can expand this list over time.
+	"capabilities": ["cache:purge"],
+	"allowedHosts": [],
+	"storage": {},
+
+	"admin": {
+		// Declared path for sidebar/nav. Plugin Manager's "Plugin pages"
+		// button opens the plugin root ("/"); the runtime also answers that.
+		"pages": [
+			{
+				"path": "/troubleshooting",
+				"label": "Troubleshooting",
+				"icon": "settings"
+			}
+		]
+	}
+}
