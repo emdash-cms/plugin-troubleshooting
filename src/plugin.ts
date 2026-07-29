@@ -2,7 +2,7 @@
  * Troubleshooting — sandboxed plugin
  *
  * Admin page for resolving EmDash runtime issues (object cache + Workers
- * Cache today; more actions over time). Uses the host `cache:purge`
+ * Caching today; more actions over time). Uses the host `cache:purge`
  * capability (`ctx.cache.*`).
  */
 
@@ -80,7 +80,7 @@ function workersClearButton(configured: boolean) {
 		action_id: "purge_workers_cache",
 		style: "secondary",
 		disabled: true,
-		title: "Workers Cache Not Configured",
+		title: "Workers Cache Not Available",
 	};
 }
 
@@ -108,7 +108,7 @@ function renderTroubleshooting(
 			{ type: "header", text: "Workers Cache" },
 			{
 				type: "section",
-				text: "Purges all edge-cached pages for this zone (Cloudflare purge_everything). Requires CF_ZONE_ID and CF_CACHE_PURGE_TOKEN — the same credentials as cloudflareCache().",
+				text: "Purges native Workers Caching for this Worker (cache.purge purgeEverything). Enable with wrangler cache.enabled and cacheCloudflare() — no zone ID or API token.",
 			},
 			{
 				type: "actions",
@@ -133,12 +133,15 @@ async function purgeObjectCache(ctx: PluginContext) {
 		const count = result.purged.length;
 		const ns = count === 1 ? "namespace" : "namespaces";
 
-		return renderTroubleshooting({ ...configured, object: true }, {
-			toast: {
-				message: `Object cache cleared (${count} ${ns})`,
-				type: "success",
+		return renderTroubleshooting(
+			{ ...configured, object: true },
+			{
+				toast: {
+					message: `Object cache cleared (${count} ${ns})`,
+					type: "success",
+				},
 			},
-		});
+		);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Unknown error";
 		ctx.log.error("Object cache purge failed", error);
@@ -153,24 +156,30 @@ async function purgeWorkersCache(ctx: PluginContext) {
 
 	if (!ctx.cache || !configured.workers || typeof ctx.cache.purgeWorkersCache !== "function") {
 		return renderTroubleshooting(configured, {
-			toast: { message: "Workers Cache Not Configured", type: "error" },
+			toast: { message: "Workers Cache Not Available", type: "error" },
 		});
 	}
 
 	try {
 		const result = await ctx.cache.purgeWorkersCache();
 		if (!result.configured || !result.purged) {
-			return renderTroubleshooting({ ...configured, workers: false }, {
-				toast: { message: "Workers Cache Not Configured", type: "error" },
-			});
+			return renderTroubleshooting(
+				{ ...configured, workers: false },
+				{
+					toast: { message: "Workers Cache Not Available", type: "error" },
+				},
+			);
 		}
 
-		return renderTroubleshooting({ ...configured, workers: true }, {
-			toast: {
-				message: "Workers Cache cleared",
-				type: "success",
+		return renderTroubleshooting(
+			{ ...configured, workers: true },
+			{
+				toast: {
+					message: "Workers Cache cleared",
+					type: "success",
+				},
 			},
-		});
+		);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : "Unknown error";
 		ctx.log.error("Workers Cache purge failed", error);

@@ -11,7 +11,7 @@
 	"description": "Resolve EmDash shenanigans — caching and other runtime issues.",
 
 	// cache:purge unlocks ctx.cache.purgeObjectCache() and
-	// ctx.cache.purgeWorkersCache() (CMS object cache + edge page cache).
+	// ctx.cache.purgeWorkersCache() (CMS object cache + native Workers Caching).
 	// Additional troubleshooting actions can expand this list over time.
 	"capabilities": ["cache:purge"],
 	"allowedHosts": [],

@@ -42,7 +42,7 @@ describe("admin route", () => {
 			action_id: "purge_workers_cache",
 			style: "secondary",
 			disabled: true,
-			title: "Workers Cache Not Configured",
+			title: "Workers Cache Not Available",
 		});
 	});
 
