@@ -108,7 +108,7 @@ function renderTroubleshooting(
 			{ type: "header", text: "Workers Cache" },
 			{
 				type: "section",
-				text: "Purges native Workers Caching for this Worker (cache.purge purgeEverything). Enable with wrangler cache.enabled and cacheCloudflare() — no zone ID or API token.",
+				text: "Purges native Workers Caching.",
 			},
 			{
 				type: "actions",
