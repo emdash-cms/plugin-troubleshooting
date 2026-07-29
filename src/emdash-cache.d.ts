@@ -17,9 +17,20 @@ declare module "emdash/plugin" {
 		purged: string[];
 	}
 
+	interface WorkersCacheStatus {
+		configured: boolean;
+	}
+
+	interface WorkersCachePurgeResult {
+		configured: boolean;
+		purged: boolean;
+	}
+
 	interface CacheAccess {
 		getObjectCacheStatus(): Promise<ObjectCacheStatus>;
 		purgeObjectCache(namespaces?: string[]): Promise<ObjectCachePurgeResult>;
+		getWorkersCacheStatus(): Promise<WorkersCacheStatus>;
+		purgeWorkersCache(): Promise<WorkersCachePurgeResult>;
 	}
 
 	interface PluginContext {

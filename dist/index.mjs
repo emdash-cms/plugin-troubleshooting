@@ -7,7 +7,7 @@
 /** @type {import("emdash").PluginDescriptor} */
 const descriptor = Object.freeze({
 	"id": "troubleshooting",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"format": "standard",
 	"entrypoint": "@emdash-cms/plugin-troubleshooting/sandbox",
 	"capabilities": [

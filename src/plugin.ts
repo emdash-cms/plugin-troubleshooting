@@ -1,9 +1,9 @@
 /**
  * Troubleshooting — sandboxed plugin
  *
- * Admin page for resolving EmDash runtime issues (object cache today;
- * more actions over time). Object-cache clear uses the host `cache:purge`
- * capability (`ctx.cache.purgeObjectCache` / `getObjectCacheStatus`).
+ * Admin page for resolving EmDash runtime issues (object cache + Workers
+ * Cache today; more actions over time). Uses the host `cache:purge`
+ * capability (`ctx.cache.*`).
  */
 
 import type { PluginContext, SandboxedPlugin } from "emdash/plugin";
@@ -18,17 +18,35 @@ interface BlockInteraction {
 /** Paths that render the Troubleshooting screen (root is what Plugin Manager links to). */
 const TROUBLESHOOTING_PAGES = new Set(["/", "/troubleshooting"]);
 
-async function getConfigured(ctx: PluginContext): Promise<boolean> {
-	if (!ctx.cache) return false;
-	try {
-		const status = await ctx.cache.getObjectCacheStatus();
-		return status.configured;
-	} catch {
-		return false;
-	}
+interface CacheConfigured {
+	object: boolean;
+	workers: boolean;
 }
 
-function clearButton(configured: boolean) {
+async function getConfigured(ctx: PluginContext): Promise<CacheConfigured> {
+	const out: CacheConfigured = { object: false, workers: false };
+	if (!ctx.cache) return out;
+
+	try {
+		const status = await ctx.cache.getObjectCacheStatus();
+		out.object = status.configured;
+	} catch {
+		// leave false
+	}
+
+	try {
+		if (typeof ctx.cache.getWorkersCacheStatus === "function") {
+			const status = await ctx.cache.getWorkersCacheStatus();
+			out.workers = status.configured;
+		}
+	} catch {
+		// leave false
+	}
+
+	return out;
+}
+
+function objectClearButton(configured: boolean) {
 	if (configured) {
 		return {
 			type: "button",
@@ -37,7 +55,6 @@ function clearButton(configured: boolean) {
 			style: "primary",
 		};
 	}
-	// Secondary + disabled greys out more clearly than a faded primary.
 	return {
 		type: "button",
 		label: "Clear object cache",
@@ -48,8 +65,27 @@ function clearButton(configured: boolean) {
 	};
 }
 
+function workersClearButton(configured: boolean) {
+	if (configured) {
+		return {
+			type: "button",
+			label: "Clear Workers Cache",
+			action_id: "purge_workers_cache",
+			style: "primary",
+		};
+	}
+	return {
+		type: "button",
+		label: "Clear Workers Cache",
+		action_id: "purge_workers_cache",
+		style: "secondary",
+		disabled: true,
+		title: "Workers Cache Not Configured",
+	};
+}
+
 function renderTroubleshooting(
-	configured: boolean,
+	configured: CacheConfigured,
 	options?: {
 		toast?: { message: string; type: "success" | "error" | "info" };
 	},
@@ -66,7 +102,17 @@ function renderTroubleshooting(
 			},
 			{
 				type: "actions",
-				elements: [clearButton(configured)],
+				elements: [objectClearButton(configured.object)],
+			},
+			{ type: "divider" },
+			{ type: "header", text: "Workers Cache" },
+			{
+				type: "section",
+				text: "Purges all edge-cached pages for this zone (Cloudflare purge_everything). Requires CF_ZONE_ID and CF_CACHE_PURGE_TOKEN — the same credentials as cloudflareCache().",
+			},
+			{
+				type: "actions",
+				elements: [workersClearButton(configured.workers)],
 			},
 		],
 		...(options?.toast ? { toast: options.toast } : {}),
@@ -76,8 +122,8 @@ function renderTroubleshooting(
 async function purgeObjectCache(ctx: PluginContext) {
 	const configured = await getConfigured(ctx);
 
-	if (!ctx.cache || !configured) {
-		return renderTroubleshooting(false, {
+	if (!ctx.cache || !configured.object) {
+		return renderTroubleshooting(configured, {
 			toast: { message: "Object Cache Not Configured", type: "error" },
 		});
 	}
@@ -87,7 +133,7 @@ async function purgeObjectCache(ctx: PluginContext) {
 		const count = result.purged.length;
 		const ns = count === 1 ? "namespace" : "namespaces";
 
-		return renderTroubleshooting(true, {
+		return renderTroubleshooting({ ...configured, object: true }, {
 			toast: {
 				message: `Object cache cleared (${count} ${ns})`,
 				type: "success",
@@ -98,6 +144,38 @@ async function purgeObjectCache(ctx: PluginContext) {
 		ctx.log.error("Object cache purge failed", error);
 		return renderTroubleshooting(configured, {
 			toast: { message: `Object cache purge failed: ${message}`, type: "error" },
+		});
+	}
+}
+
+async function purgeWorkersCache(ctx: PluginContext) {
+	const configured = await getConfigured(ctx);
+
+	if (!ctx.cache || !configured.workers || typeof ctx.cache.purgeWorkersCache !== "function") {
+		return renderTroubleshooting(configured, {
+			toast: { message: "Workers Cache Not Configured", type: "error" },
+		});
+	}
+
+	try {
+		const result = await ctx.cache.purgeWorkersCache();
+		if (!result.configured || !result.purged) {
+			return renderTroubleshooting({ ...configured, workers: false }, {
+				toast: { message: "Workers Cache Not Configured", type: "error" },
+			});
+		}
+
+		return renderTroubleshooting({ ...configured, workers: true }, {
+			toast: {
+				message: "Workers Cache cleared",
+				type: "success",
+			},
+		});
+	} catch (error) {
+		const message = error instanceof Error ? error.message : "Unknown error";
+		ctx.log.error("Workers Cache purge failed", error);
+		return renderTroubleshooting(configured, {
+			toast: { message: `Workers Cache purge failed: ${message}`, type: "error" },
 		});
 	}
 }
@@ -119,6 +197,10 @@ const plugin = {
 
 				if (interaction.type === "block_action" && interaction.action_id === "purge_object_cache") {
 					return purgeObjectCache(ctx);
+				}
+
+				if (interaction.type === "block_action" && interaction.action_id === "purge_workers_cache") {
+					return purgeWorkersCache(ctx);
 				}
 
 				return { blocks: [] };

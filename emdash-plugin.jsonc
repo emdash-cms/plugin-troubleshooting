@@ -10,7 +10,8 @@
 	"security": { "url": "https://github.com/emdash-cms/plugin-troubleshooting/security/advisories/new" },
 	"description": "Resolve EmDash shenanigans — caching and other runtime issues.",
 
-	// cache:purge unlocks ctx.cache.purgeObjectCache() (CMS object cache).
+	// cache:purge unlocks ctx.cache.purgeObjectCache() and
+	// ctx.cache.purgeWorkersCache() (CMS object cache + edge page cache).
 	// Additional troubleshooting actions can expand this list over time.
 	"capabilities": ["cache:purge"],
 	"allowedHosts": [],

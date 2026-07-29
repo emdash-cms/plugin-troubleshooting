@@ -3,11 +3,19 @@ import { describe, expect, it, vi } from "vitest";
 import plugin from "../src/plugin.js";
 
 describe("admin route", () => {
-	it("disables the clear button when object cache is not configured", async () => {
+	it("disables clear buttons when caches are not configured", async () => {
 		const getObjectCacheStatus = vi.fn().mockResolvedValue({ configured: false });
+		const getWorkersCacheStatus = vi.fn().mockResolvedValue({ configured: false });
 		const result = (await callAdmin(
 			{ type: "page_load", page: "/" },
-			{ cache: { getObjectCacheStatus, purgeObjectCache: vi.fn() } },
+			{
+				cache: {
+					getObjectCacheStatus,
+					getWorkersCacheStatus,
+					purgeObjectCache: vi.fn(),
+					purgeWorkersCache: vi.fn(),
+				},
+			},
 		)) as {
 			blocks: Array<{
 				type: string;
@@ -17,11 +25,10 @@ describe("admin route", () => {
 		};
 
 		expect(getObjectCacheStatus).toHaveBeenCalledOnce();
-		expect(result.blocks.some((b) => b.type === "section" && b.text?.startsWith("Status:"))).toBe(
-			false,
-		);
-		const actions = result.blocks.find((b) => b.type === "actions");
-		expect(actions?.elements?.[0]).toMatchObject({
+		expect(getWorkersCacheStatus).toHaveBeenCalledOnce();
+		const actionBlocks = result.blocks.filter((b) => b.type === "actions");
+		expect(actionBlocks).toHaveLength(2);
+		expect(actionBlocks[0]?.elements?.[0]).toMatchObject({
 			type: "button",
 			label: "Clear object cache",
 			action_id: "purge_object_cache",
@@ -29,13 +36,29 @@ describe("admin route", () => {
 			disabled: true,
 			title: "Object Cache Not Configured",
 		});
+		expect(actionBlocks[1]?.elements?.[0]).toMatchObject({
+			type: "button",
+			label: "Clear Workers Cache",
+			action_id: "purge_workers_cache",
+			style: "secondary",
+			disabled: true,
+			title: "Workers Cache Not Configured",
+		});
 	});
 
-	it("enables the clear button when object cache is configured", async () => {
+	it("enables clear buttons when caches are configured", async () => {
 		const getObjectCacheStatus = vi.fn().mockResolvedValue({ configured: true });
+		const getWorkersCacheStatus = vi.fn().mockResolvedValue({ configured: true });
 		const result = (await callAdmin(
 			{ type: "page_load", page: "/" },
-			{ cache: { getObjectCacheStatus, purgeObjectCache: vi.fn() } },
+			{
+				cache: {
+					getObjectCacheStatus,
+					getWorkersCacheStatus,
+					purgeObjectCache: vi.fn(),
+					purgeWorkersCache: vi.fn(),
+				},
+			},
 		)) as {
 			blocks: Array<{
 				type: string;
@@ -43,15 +66,21 @@ describe("admin route", () => {
 			}>;
 		};
 
-		const actions = result.blocks.find((b) => b.type === "actions");
-		expect(actions?.elements?.[0]).toMatchObject({
+		const actionBlocks = result.blocks.filter((b) => b.type === "actions");
+		expect(actionBlocks[0]?.elements?.[0]).toMatchObject({
 			type: "button",
 			label: "Clear object cache",
 			action_id: "purge_object_cache",
 			style: "primary",
 		});
-		expect(actions?.elements?.[0]).not.toHaveProperty("disabled");
-		expect(actions?.elements?.[0]).not.toHaveProperty("title");
+		expect(actionBlocks[0]?.elements?.[0]).not.toHaveProperty("disabled");
+		expect(actionBlocks[1]?.elements?.[0]).toMatchObject({
+			type: "button",
+			label: "Clear Workers Cache",
+			action_id: "purge_workers_cache",
+			style: "primary",
+		});
+		expect(actionBlocks[1]?.elements?.[0]).not.toHaveProperty("disabled");
 	});
 
 	it("purges object cache on button action when configured", async () => {
@@ -61,9 +90,17 @@ describe("admin route", () => {
 			purged: ["settings", "menus", "content:posts"],
 		});
 		const getObjectCacheStatus = vi.fn().mockResolvedValue({ configured: true });
+		const getWorkersCacheStatus = vi.fn().mockResolvedValue({ configured: false });
 		const result = (await callAdmin(
 			{ type: "block_action", action_id: "purge_object_cache" },
-			{ cache: { purgeObjectCache, getObjectCacheStatus } },
+			{
+				cache: {
+					purgeObjectCache,
+					getObjectCacheStatus,
+					getWorkersCacheStatus,
+					purgeWorkersCache: vi.fn(),
+				},
+			},
 		)) as {
 			toast?: { type: string; message: string };
 		};
@@ -71,6 +108,34 @@ describe("admin route", () => {
 		expect(purgeObjectCache).toHaveBeenCalledOnce();
 		expect(result.toast).toEqual({
 			message: "Object cache cleared (3 namespaces)",
+			type: "success",
+		});
+	});
+
+	it("purges Workers Cache on button action when configured", async () => {
+		const purgeWorkersCache = vi.fn().mockResolvedValue({
+			configured: true,
+			purged: true,
+		});
+		const getObjectCacheStatus = vi.fn().mockResolvedValue({ configured: false });
+		const getWorkersCacheStatus = vi.fn().mockResolvedValue({ configured: true });
+		const result = (await callAdmin(
+			{ type: "block_action", action_id: "purge_workers_cache" },
+			{
+				cache: {
+					purgeWorkersCache,
+					getObjectCacheStatus,
+					getWorkersCacheStatus,
+					purgeObjectCache: vi.fn(),
+				},
+			},
+		)) as {
+			toast?: { type: string; message: string };
+		};
+
+		expect(purgeWorkersCache).toHaveBeenCalledOnce();
+		expect(result.toast).toEqual({
+			message: "Workers Cache cleared",
 			type: "success",
 		});
 	});
@@ -84,9 +149,9 @@ describe("admin route", () => {
 		const result = (await callAdmin({ type: "page_load", page: "/" })) as {
 			blocks: Array<{ type: string; text?: string }>;
 		};
-		expect(result.blocks.some((b) => b.type === "context" && b.text === "Resolve EmDash shenanigans")).toBe(
-			true,
-		);
+		expect(
+			result.blocks.some((b) => b.type === "context" && b.text === "Resolve EmDash shenanigans"),
+		).toBe(true);
 	});
 });
 
@@ -113,6 +178,8 @@ function makeTestContext(overrides: Record<string, unknown> = {}) {
 		cache: {
 			getObjectCacheStatus: async () => ({ configured: false }),
 			purgeObjectCache: async () => ({ configured: false, active: false, purged: [] }),
+			getWorkersCacheStatus: async () => ({ configured: false }),
+			purgeWorkersCache: async () => ({ configured: false, purged: false }),
 		},
 		...overrides,
 	} as unknown as import("emdash").PluginContext;

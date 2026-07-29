@@ -1,14 +1,21 @@
 # @emdash-cms/plugin-troubleshooting
 
-EmDash plugin for resolving runtime shenanigans (object cache today; more tools over time).
+EmDash plugin for resolving runtime shenanigans (object cache + Workers Cache
+today; more tools over time).
 
 Adds a **Troubleshooting** admin page with the description "Resolve EmDash shenanigans".
 
 ### Object cache clear
 
 Requires EmDash **≥ 0.32.0** with the `cache:purge` capability and
-`POST /_emdash/api/admin/cache/object` (core product path). The plugin stays
-**sandboxed** and calls `ctx.cache.purgeObjectCache()`.
+`POST /_emdash/api/admin/cache/object`. The plugin stays **sandboxed** and
+calls `ctx.cache.purgeObjectCache()`.
+
+### Workers Cache clear
+
+Same capability. Calls `ctx.cache.purgeWorkersCache()`, which hits Cloudflare
+`purge_everything` using `CF_ZONE_ID` + `CF_CACHE_PURGE_TOKEN` (the same
+credentials as `cloudflareCache()`). Button is disabled when those are missing.
 
 > **Note on Settings hub:** EmDash does not currently let plugins inject tabs into the core Settings screen (`/_emdash/admin/settings`). Plugin admin pages appear in the sidebar under the plugin name (and in the command palette). This plugin registers a page labeled **Troubleshooting** there.
 
