@@ -54,6 +54,9 @@ export function normalizePathPrefix(
 	raw: string,
 ): { ok: true; path: string } | { ok: false; message: string } {
 	const trimmed = raw.trim();
+	if (trimmed.startsWith("//")) {
+		return { ok: false, message: "Protocol-relative URLs are not allowed" };
+	}
 	if (!trimmed) {
 		return { ok: false, message: "Path is required" };
 	}
