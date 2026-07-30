@@ -15,6 +15,13 @@ describe("normalizePathPrefix", () => {
 	it("rejects empty", () => {
 		expect(normalizePathPrefix("")).toMatchObject({ ok: false });
 	});
+
+	it("rejects protocol-relative URLs", () => {
+		expect(normalizePathPrefix("//example.com/posts")).toEqual({
+			ok: false,
+			message: "Protocol-relative URLs are not allowed",
+		});
+	});
 });
 
 describe("admin route", () => {
