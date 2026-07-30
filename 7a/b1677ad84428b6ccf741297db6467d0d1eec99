@@ -1,0 +1,19 @@
+src/plugin.ts
+  s_660966d8bc854b::t_e77cbca6c4d2b3 57-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "7ab1677ad84428b6ccf741297db6467d0d1eec99",
+  "prompts": {},
+  "sessions": {
+    "s_660966d8bc854b": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_04c016ff4ffe9oWm99rf7b38fV",
+        "model": "grok-4.5"
+      },
+      "human_author": "scottbuscemi <sbuscemi@cloudflare.com>"
+    }
+  }
+}
