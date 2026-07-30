@@ -1,0 +1,19 @@
+dist/plugin.mjs
+  s_238d28c5233f77::t_e901c6b59fefcc 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "4abfca4508294e2ee7c6cf5a16f4ff0573784950",
+  "prompts": {},
+  "sessions": {
+    "s_238d28c5233f77": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_050fbec5affeJ5ZbIEUX4HGzSd",
+        "model": "grok-4.5"
+      },
+      "human_author": "scottbuscemi <sbuscemi@cloudflare.com>"
+    }
+  }
+}
