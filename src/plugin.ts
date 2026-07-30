@@ -62,7 +62,7 @@ export function normalizePathPrefix(
 	}
 
 	let path: string;
-	if (/^[a-zA-Z][a-zA-Z+\-.]*:\/\//.test(trimmed)) {
+	if (/^[a-zA-Z][a-zA-Z0-9+\-.]*:\/\//.test(trimmed)) {
 		try {
 			const url = new URL(trimmed);
 			path = url.pathname || "/";
